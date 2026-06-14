@@ -1,0 +1,12 @@
+# Ejecutable compilado
+run_tests
+run_tests.exe
+
+# Modulos compilados
+*.so
+*.dll
+*.o
+
+# Directorios de compilacion
+target/
+build/
