@@ -10,46 +10,52 @@ Implementa las 5 operaciones aritméticas básicas usando únicamente suma y res
 
 | Archivo / Directorio | Propósito |
 |----------------------|-----------|
-| `src/CALCULATOR.cbl` | Implementación de las 5 operaciones aritméticas básicas. |
-| `test/RUN-TESTS.cbl` | Suite de pruebas unitarias (test runner propio). |
-| `test/ASSERTS.cpy` | Copybook de aserciones (reservado para uso futuro). |
+| `src/CALCULATOR.cbl` | Subprograma con las 5 operaciones aritméticas básicas. |
+| `src/CALCULATOR-PARAMS.cpy` | Copybook con la estructura de parámetros (`CALC-PARAMS`), compartida entre `CALCULATOR` y `RUN-TESTS`. |
+| `test/RUN-TESTS.cbl` | Suite de pruebas unitarias con tabla de datos (`OCCURS`). |
+| `test/ASSERTS.cpy` | Copybook con utilidades de aserción reutilizables (`ASSERT-EQUAL`, `ASSERT-REPORT`). |
 | `Makefile` | Automatización de compilación y pruebas. |
-| `config.properties` | Configuración para COBOLCheck (no utilizado actualmente). |
+| `.gitignore` | Ignora artefactos compilados (`run_tests`, `*.so`, `*.o`). |
+| `config.properties` | Configuración para COBOLCheck (no utilizado). |
 
 **Estructura de directorios esperada:**
 
 ```text
 calculator/
+├── .gitignore                  # Artefactos ignorados
 ├── src/
-│   └── CALCULATOR.cbl         # Implementación (formato libre)
+│   ├── CALCULATOR.cbl          # Implementacion (formato libre)
+│   └── CALCULATOR-PARAMS.cpy   # Copybook de parametros
 ├── test/
-│   ├── RUN-TESTS.cbl          # Test runner
-│   └── ASSERTS.cpy            # Copybook de aserciones
-├── Makefile                   # Build y pruebas
-├── config.properties          # Config. COBOLCheck
-└── README.md                  # Este archivo
+│   ├── RUN-TESTS.cbl           # Test runner (tabla + bucle)
+│   └── ASSERTS.cpy             # Copybook de aserciones
+├── Makefile                    # Build y pruebas
+└── README.md                   # Este archivo
 ```
 
 ---
 
 ## 🛠️ Enfoque y construcción / Approach & Build
 
-**ES:** El proyecto se construyó manualmente con un único archivo fuente y un test runner propio, usando **GnuCOBOL** como compilador.
+**ES:** El proyecto sigue las buenas prácticas de COBOL empresarial:
 
-1. **Biblioteca** — `src/CALCULATOR.cbl` con las 5 operaciones como subprograma (`CALL`).
-2. **Pruebas** — `test/RUN-TESTS.cbl` con 5 tests mediante `CALL` + verificación manual con `IF`.
-3. **Makefile** — Compila ambos fuentes juntos y ejecuta el test runner.
+1. **Subprograma único** (`CALCULATOR.cbl`) con las 5 operaciones como párrafos internos, invocado mediante `CALL`.
+2. **Copybook de parámetros** (`CALCULATOR-PARAMS.cpy`) con un grupo `01 CALC-PARAMS` que garantiza que el layout de memoria entre llamador y llamado sea idéntico.
+3. **Copybook de aserciones** (`ASSERTS.cpy`) con párrafos `ASSERT-EQUAL` y `ASSERT-REPORT` reutilizables en cualquier suite de pruebas.
+4. **Tabla de datos** (`OCCURS 5 TIMES`) en el test runner, eliminando código repetitivo mediante un bucle `PERFORM VARYING`.
+5. **Formato libre** (`-free`) consistente en todos los archivos.
 
-**EN:** The project was built manually with a single source file and a custom test runner, using **GnuCOBOL** as the compiler.
+**EN:** The project follows enterprise COBOL best practices:
 
-1. **Library** — `src/CALCULATOR.cbl` with the 5 operations as a subprogram (`CALL`).
-2. **Tests** — `test/RUN-TESTS.cbl` with 5 tests via `CALL` + manual verification with `IF`.
-3. **Makefile** — Compiles both sources together and runs the test runner.
+1. **Single subprogram** (`CALCULATOR.cbl`) with the 5 operations as internal paragraphs, invoked via `CALL`.
+2. **Parameter copybook** (`CALCULATOR-PARAMS.cpy`) with a `01 CALC-PARAMS` group ensuring identical memory layout between caller and callee.
+3. **Assert copybook** (`ASSERTS.cpy`) with reusable `ASSERT-EQUAL` and `ASSERT-REPORT` paragraphs.
+4. **Data table** (`OCCURS 5 TIMES`) in the test runner, eliminating repetitive code via a `PERFORM VARYING` loop.
+5. **Free format** (`-free`) consistently across all files.
 
 ### Cómo se creó / How it was created
 
 ```bash
-# Compilar y ejecutar pruebas
 make test
 ```
 
@@ -57,68 +63,101 @@ make test
 
 ## 📄 Archivos de configuración clave / Key Configuration Files
 
-### `src/CALCULATOR.cbl` — Implementación
+### `src/CALCULATOR-PARAMS.cpy` — Copybook de parámetros
 
-**ES:** Subprograma COBOL invocado mediante `CALL`. Recibe 4 parámetros via `LINKAGE SECTION`:
-- `OP-CODE` (1: suma, 2: resta, 3: mult, 4: div, 5: módulo)
-- `A`, `B` (operandos)
-- `RESULT` (resultado)
+**ES:** Define un grupo de 4 campos que se pasa como un único parámetro a `CALCULATOR`. Ambos programas (`CALCULATOR.cbl` y `RUN-TESTS.cbl`) incluyen este copybook, garantizando que el layout de memoria coincida exactamente.
 
-Usa `EVALUATE` para seleccionar la operación, similar a un `switch` en otros lenguajes.
-
-**EN:** COBOL subprogram invoked via `CALL`. Receives 4 parameters via `LINKAGE SECTION`:
-- `OP-CODE` (1: add, 2: subtract, 3: multiply, 4: divide, 5: modulus)
-- `A`, `B` (operands)
-- `RESULT` (result)
-
-Uses `EVALUATE` to select the operation, similar to a `switch` in other languages.
+**EN:** Defines a 4-field group passed as a single parameter to `CALCULATOR`. Both programs (`CALCULATOR.cbl` and `RUN-TESTS.cbl`) include this copybook, ensuring identical memory layout.
 
 ```cobol
-PROCEDURE DIVISION USING OP-CODE A B RESULT.
+01 CALC-PARAMS.
+   05 CALC-OP-CODE     PIC 9(1).
+   05 CALC-A           PIC S9(9).
+   05 CALC-B           PIC S9(9).
+   05 CALC-RESULT      PIC S9(9).
+```
+
+| Campo | Propósito |
+|-------|-----------|
+| `CALC-OP-CODE` | Código de operación (1=suma, 2=resta, 3=mult, 4=div, 5=módulo) |
+| `CALC-A` | Primer operando |
+| `CALC-B` | Segundo operando |
+| `CALC-RESULT` | Resultado de la operación |
+
+### `src/CALCULATOR.cbl` — Implementación
+
+**ES:** Subprograma COBOL invocado mediante `CALL "CALCULATOR" USING CALC-PARAMS`. Usa `LINKAGE SECTION` para recibir parámetros y `GOBACK` para retornar. Las 5 operaciones se implementan como párrafos internos, despachadas con `EVALUATE`.
+
+**EN:** COBOL subprogram invoked via `CALL "CALCULATOR" USING CALC-PARAMS`. Uses `LINKAGE SECTION` to receive parameters and `GOBACK` to return. The 5 operations are implemented as internal paragraphs, dispatched via `EVALUATE`.
+
+```cobol
+LINKAGE SECTION.
+COPY CALCULATOR-PARAMS.
+
+PROCEDURE DIVISION USING CALC-PARAMS.
 MAIN.
-    EVALUATE OP-CODE
+    EVALUATE CALC-OP-CODE
         WHEN 1
             PERFORM ADDITION
         WHEN 2
             PERFORM SUBTRACTION
-        WHEN 3
-            PERFORM MULTIPLICATION
-        WHEN 4
-            PERFORM DIVISION-PROC
-        WHEN 5
-            PERFORM MODULUS
-        WHEN OTHER
-            MOVE 0 TO RESULT
+        ...
     END-EVALUATE
     GOBACK.
 ```
 
+### `test/ASSERTS.cpy` — Copybook de aserciones
+
+**ES:** Proporciona dos párrafos reutilizables:
+- `ASSERT-EQUAL` — compara `WS-ASSERT-ACTUAL` con `WS-ASSERT-EXPECTED` e imprime `[OK]` o `[FAIL]`.
+- `ASSERT-REPORT` — muestra el resumen final y establece `RETURN-CODE`.
+
+Se incluye via `COPY ASSERTS` en la `PROCEDURE DIVISION`.
+
+**EN:** Provides two reusable paragraphs:
+- `ASSERT-EQUAL` — compares `WS-ASSERT-ACTUAL` with `WS-ASSERT-EXPECTED` and prints `[OK]` or `[FAIL]`.
+- `ASSERT-REPORT` — shows the final summary and sets `RETURN-CODE`.
+
+Included via `COPY ASSERTS` in the `PROCEDURE DIVISION`.
+
+```cobol
+COPY ASSERTS.
+...
+MOVE <expected> TO WS-ASSERT-EXPECTED
+MOVE <actual>   TO WS-ASSERT-ACTUAL
+MOVE "<name>"   TO WS-ASSERT-NAME
+PERFORM ASSERT-EQUAL
+...
+PERFORM ASSERT-REPORT
+```
+
 ### `test/RUN-TESTS.cbl` — Test runner
 
-**ES:** Programa independiente que:
-1. Define valores de entrada y esperados en `WORKING-STORAGE`.
-2. Invoca `CALCULATOR` con `CALL ... USING`.
-3. Compara el resultado con `IF WS-RESULTADO = WS-ESPERADO`.
-4. Acumula contadores de pasadas/falladas.
-5. Retorna código de salida 0 si todo pasó, 1 si hay fallos.
+**ES:** Usa una tabla `OCCURS 5 TIMES` para definir los 5 casos de prueba (operación, operandos, resultado esperado). Un bucle `PERFORM VARYING` itera sobre la tabla, invoca `CALCULATOR` y verifica con `ASSERT-EQUAL`.
 
-**EN:** Independent program that:
-1. Defines input and expected values in `WORKING-STORAGE`.
-2. Invokes `CALCULATOR` with `CALL ... USING`.
-3. Compares the result with `IF WS-RESULTADO = WS-ESPERADO`.
-4. Accumulates passed/failed counters.
-5. Returns exit code 0 if all passed, 1 if any failed.
+**EN:** Uses an `OCCURS 5 TIMES` table to define the 5 test cases (operation, operands, expected result). A `PERFORM VARYING` loop iterates over the table, invokes `CALCULATOR`, and verifies with `ASSERT-EQUAL`.
+
+```cobol
+PERFORM VARYING WS-IDX FROM 1 BY 1 UNTIL WS-IDX > WS-TEST-COUNT
+    MOVE TC-OP-CODE(WS-IDX) TO CALC-OP-CODE
+    MOVE TC-A(WS-IDX)       TO CALC-A
+    MOVE TC-B(WS-IDX)       TO CALC-B
+    ...
+    CALL "CALCULATOR" USING CALC-PARAMS
+    PERFORM ASSERT-EQUAL
+END-PERFORM
+```
 
 ### `Makefile` — Automatización
 
 **ES:** Targets disponibles:
-- `make build` — Compila `run_tests` desde `RUN-TESTS.cbl` + `CALCULATOR.cbl`.
-- `make test` — Compila y ejecuta las pruebas.
+- `make build` — Compila con `cobc -x -free -Isrc -Itest`.
+- `make test` — Compila y ejecuta `run_tests`.
 - `make clean` — Limpia artefactos compilados.
 
 **EN:** Available targets:
-- `make build` — Compiles `run_tests` from `RUN-TESTS.cbl` + `CALCULATOR.cbl`.
-- `make test` — Builds and runs the tests.
+- `make build` — Compiles with `cobc -x -free -Isrc -Itest`.
+- `make test` — Builds and runs `run_tests`.
 - `make clean` — Cleans compiled artifacts.
 
 ---
@@ -147,7 +186,7 @@ make test
 O manualmente:
 
 ```bash
-cobc -x -free -o run_tests test/RUN-TESTS.cbl src/CALCULATOR.cbl
+cobc -x -free -Isrc -Itest -o run_tests test/RUN-TESTS.cbl src/CALCULATOR.cbl
 ./run_tests
 ```
 
@@ -162,10 +201,11 @@ Ejecutando pruebas de CALCULATOR...
   [OK] Div: 10 / 3
   [OK] Mod: 10 % 3
 
-RESULTADOS:
-  Pruebas ejecutadas: 005
-  Pasadas: 005
-  Falladas: 000
+RESUMEN:
+  Total:     005
+  Pasadas:   005
+  Falladas:  000
+  >>> TODAS LAS PRUEBAS PASARON <<<
 ```
 
 ---
@@ -174,22 +214,27 @@ RESULTADOS:
 
 | Operación | Código | Algoritmo | Descripción |
 |-----------|--------|-----------|-------------|
-| Suma | `1` | Directo | `ADD A TO B GIVING RESULT` (nativo de COBOL) |
-| Resta | `2` | Directo | `SUBTRACT B FROM A GIVING RESULT` (nativo de COBOL) |
-| Multiplicación | `3` | Iterativo | Suma repetitiva con `PERFORM VARYING` sin usar `*` |
-| División | `4` | Iterativo | Restas sucesivas con `PERFORM UNTIL` sin usar `/` |
-| Módulo | `5` | Compuesto | Cociente + multiplicación nativa + resta: `a - (b * (a / b))` |
+| Suma | `1` | Directo | `ADD CALC-A TO CALC-B GIVING CALC-RESULT` |
+| Resta | `2` | Directo | `SUBTRACT CALC-B FROM CALC-A GIVING CALC-RESULT` |
+| Multiplicación | `3` | Iterativo | `PERFORM VARYING` sumando `CALC-A` repetidamente (sin `*`) |
+| División | `4` | Iterativo | `PERFORM UNTIL` restando `CALC-B` de `CALC-A` (sin `/`) |
+| Módulo | `5` | Compuesto educ. | `division(a,b)` → cociente → `multiplication(cociente,b)` → `a - producto` |
+
+> **ES:** `modulus` sigue exactamente el pseudocódigo de la especificación: llama a `DIVISION-PROC` para obtener el cociente, luego a `MULTIPLICATION` (suma repetitiva) para el producto, y finalmente resta. No usa el operador `*` ni `MOD` directos.
+> **EN:** `modulus` follows the specification pseudocode exactly: calls `DIVISION-PROC` for the quotient, then `MULTIPLICATION` (repeated addition) for the product, and finally subtracts. It does not use the `*` or `MOD` operators directly.
 
 ---
 
 ## 📝 Notas de implementación / Implementation Notes
 
-- **ES:** COBOL no permite operadores aritméticos como `*` o `/` en el sentido tradicional. La multiplicación se implementa con un bucle `PERFORM VARYING` que suma `A` repetidamente.
-- **EN:** COBOL does not allow arithmetic operators like `*` or `/` in the traditional sense. Multiplication is implemented with a `PERFORM VARYING` loop that adds `A` repeatedly.
-- **ES:** El subprograma usa `LINKAGE SECTION` para recibir parámetros y `GOBACK` para retornar, que es el estándar COBOL para subprogramas.
-- **EN:** The subprogram uses `LINKAGE SECTION` to receive parameters and `GOBACK` to return, which is the COBOL standard for subprograms.
-- **ES:** No se necesita un framework de testing externo; el test runner usa `CALL`, `IF` y contadores manuales con `RETURN-CODE` para reportar resultados.
-- **EN:** No external testing framework is needed; the test runner uses `CALL`, `IF`, and manual counters with `RETURN-CODE` to report results.
+- **ES:** Todos los archivos usan **formato libre** (`-free`). Los comentarios usan `*>` en lugar de `*` para evitar que GnuCOBOL interprete palabras clave dentro de comentarios.
+- **EN:** All files use **free format** (`-free`). Comments use `*>` instead of `*` to prevent GnuCOBOL from interpreting keywords inside comments.
+- **ES:** El copybook `CALCULATOR-PARAMS.cpy` se incluye tanto en `LINKAGE SECTION` (llamado) como en `WORKING-STORAGE` (llamador), garantizando que el layout de los parámetros coincida exactamente.
+- **EN:** The `CALCULATOR-PARAMS.cpy` copybook is included both in `LINKAGE SECTION` (callee) and `WORKING-STORAGE` (caller), ensuring the parameter layout matches exactly.
+- **ES:** El subprograma usa `GOBACK` para retornar al llamador. El programa principal usa `STOP RUN` para terminar.
+- **EN:** The subprogram uses `GOBACK` to return to the caller. The main program uses `STOP RUN` to terminate.
+- **ES:** Las variables de `WORKING-STORAGE` se inicializan con `VALUE` para evitar valores basura.
+- **EN:** `WORKING-STORAGE` variables are initialized with `VALUE` to prevent garbage values.
 
 ---
 

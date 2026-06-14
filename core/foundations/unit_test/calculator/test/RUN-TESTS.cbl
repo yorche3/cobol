@@ -1,95 +1,85 @@
-       IDENTIFICATION DIVISION.
-       PROGRAM-ID. RUN-TESTS.
+IDENTIFICATION DIVISION.
+PROGRAM-ID. RUN-TESTS.
 
-       DATA DIVISION.
-       WORKING-STORAGE SECTION.
-       01 WS-TOTAL-PRUEBAS  PIC 9(03) VALUE 0.
-       01 WS-PASADOS        PIC 9(03) VALUE 0.
-       01 WS-FALLADOS       PIC 9(03) VALUE 0.
-       01 WS-OP-CODE        PIC 9(1).
-       01 WS-A              PIC S9(9).
-       01 WS-B              PIC S9(9).
-       01 WS-RESULTADO      PIC S9(9).
-       01 WS-ESPERADO       PIC S9(9).
-       01 WS-NOMBRE-PRUEBA  PIC X(30).
+DATA DIVISION.
+WORKING-STORAGE SECTION.
+COPY CALCULATOR-PARAMS.
 
-       PROCEDURE DIVISION.
-       MAIN.
-           MOVE 0 TO WS-TOTAL-PRUEBAS
-                       WS-PASADOS
-                       WS-FALLADOS.
+*> Contadores para aserciones (usados por COPY ASSERTS)
+01 WS-ASSERT-TOTAL    PIC 9(03) VALUE 0.
+01 WS-ASSERT-PASSED   PIC 9(03) VALUE 0.
+01 WS-ASSERT-FAILED   PIC 9(03) VALUE 0.
+01 WS-ASSERT-EXPECTED PIC S9(9).
+01 WS-ASSERT-ACTUAL   PIC S9(9).
+01 WS-ASSERT-NAME     PIC X(30).
 
-           DISPLAY "Ejecutando pruebas de CALCULATOR..."
-           DISPLAY " "
+*> Tabla de casos de prueba
+01 WS-TEST-COUNT       PIC 9(02) VALUE 5.
+01 WS-IDX              PIC 9(02).
+01 WS-TEST-CASES.
+   05 WS-TEST-CASE OCCURS 5 TIMES.
+       10 TC-OP-CODE     PIC 9(1).
+       10 TC-A           PIC S9(9).
+       10 TC-B           PIC S9(9).
+       10 TC-EXPECTED    PIC S9(9).
+       10 TC-NAME        PIC X(30).
 
-      *> Prueba 1: Suma (2 + 3 = 5)
-           MOVE "Suma: 2 + 3" TO WS-NOMBRE-PRUEBA
-           MOVE 1 TO WS-OP-CODE
-           MOVE 2 TO WS-A
-           MOVE 3 TO WS-B
-           MOVE 5 TO WS-ESPERADO
-           CALL "CALCULATOR" USING WS-OP-CODE WS-A WS-B WS-RESULTADO
-           PERFORM VERIFICAR-RESULTADO
+PROCEDURE DIVISION.
+MAIN.
 
-      *> Prueba 2: Resta (5 - 2 = 3)
-           MOVE "Resta: 5 - 2" TO WS-NOMBRE-PRUEBA
-           MOVE 2 TO WS-OP-CODE
-           MOVE 5 TO WS-A
-           MOVE 2 TO WS-B
-           MOVE 3 TO WS-ESPERADO
-           CALL "CALCULATOR" USING WS-OP-CODE WS-A WS-B WS-RESULTADO
-           PERFORM VERIFICAR-RESULTADO
+*> Inicializar tabla de casos de prueba
+    MOVE 1 TO TC-OP-CODE(1)
+    MOVE 2 TO TC-A(1)
+    MOVE 3 TO TC-B(1)
+    MOVE 5 TO TC-EXPECTED(1)
+    MOVE "Suma: 2 + 3" TO TC-NAME(1)
 
-      *> Prueba 3: Multiplicacion (3 * 4 = 12)
-           MOVE "Mult: 3 * 4" TO WS-NOMBRE-PRUEBA
-           MOVE 3 TO WS-OP-CODE
-           MOVE 3 TO WS-A
-           MOVE 4 TO WS-B
-           MOVE 12 TO WS-ESPERADO
-           CALL "CALCULATOR" USING WS-OP-CODE WS-A WS-B WS-RESULTADO
-           PERFORM VERIFICAR-RESULTADO
+    MOVE 2 TO TC-OP-CODE(2)
+    MOVE 5 TO TC-A(2)
+    MOVE 2 TO TC-B(2)
+    MOVE 3 TO TC-EXPECTED(2)
+    MOVE "Resta: 5 - 2" TO TC-NAME(2)
 
-      *> Prueba 4: Division (10 / 3 = 3)
-           MOVE "Div: 10 / 3" TO WS-NOMBRE-PRUEBA
-           MOVE 4 TO WS-OP-CODE
-           MOVE 10 TO WS-A
-           MOVE 3 TO WS-B
-           MOVE 3 TO WS-ESPERADO
-           CALL "CALCULATOR" USING WS-OP-CODE WS-A WS-B WS-RESULTADO
-           PERFORM VERIFICAR-RESULTADO
+    MOVE 3 TO TC-OP-CODE(3)
+    MOVE 3 TO TC-A(3)
+    MOVE 4 TO TC-B(3)
+    MOVE 12 TO TC-EXPECTED(3)
+    MOVE "Mult: 3 * 4" TO TC-NAME(3)
 
-      *> Prueba 5: Modulo (10 % 3 = 1)
-           MOVE "Mod: 10 % 3" TO WS-NOMBRE-PRUEBA
-           MOVE 5 TO WS-OP-CODE
-           MOVE 10 TO WS-A
-           MOVE 3 TO WS-B
-           MOVE 1 TO WS-ESPERADO
-           CALL "CALCULATOR" USING WS-OP-CODE WS-A WS-B WS-RESULTADO
-           PERFORM VERIFICAR-RESULTADO
+    MOVE 4 TO TC-OP-CODE(4)
+    MOVE 10 TO TC-A(4)
+    MOVE 3 TO TC-B(4)
+    MOVE 3 TO TC-EXPECTED(4)
+    MOVE "Div: 10 / 3" TO TC-NAME(4)
 
-           DISPLAY " "
-           DISPLAY "RESULTADOS:"
-           DISPLAY "  Pruebas ejecutadas: " WS-TOTAL-PRUEBAS
-           DISPLAY "  Pasadas: " WS-PASADOS
-           DISPLAY "  Falladas: " WS-FALLADOS
+    MOVE 5 TO TC-OP-CODE(5)
+    MOVE 10 TO TC-A(5)
+    MOVE 3 TO TC-B(5)
+    MOVE 1 TO TC-EXPECTED(5)
+    MOVE "Mod: 10 % 3" TO TC-NAME(5)
 
-           IF WS-FALLADOS > 0
-               MOVE 1 TO RETURN-CODE
-           ELSE
-               MOVE 0 TO RETURN-CODE
-           END-IF
+    DISPLAY "Ejecutando pruebas de CALCULATOR..."
+    DISPLAY " "
 
-           GOBACK.
+*> Bucle principal de pruebas
+    PERFORM VARYING WS-IDX FROM 1 BY 1 UNTIL WS-IDX > WS-TEST-COUNT
+        MOVE TC-OP-CODE(WS-IDX) TO CALC-OP-CODE
+        MOVE TC-A(WS-IDX)       TO CALC-A
+        MOVE TC-B(WS-IDX)       TO CALC-B
+        MOVE TC-EXPECTED(WS-IDX) TO WS-ASSERT-EXPECTED
+        MOVE TC-NAME(WS-IDX)    TO WS-ASSERT-NAME
 
-       VERIFICAR-RESULTADO.
-           ADD 1 TO WS-TOTAL-PRUEBAS.
-           IF WS-RESULTADO = WS-ESPERADO
-               ADD 1 TO WS-PASADOS
-               DISPLAY "  [OK] " WS-NOMBRE-PRUEBA
-           ELSE
-               ADD 1 TO WS-FALLADOS
-               DISPLAY "  [FAIL] " WS-NOMBRE-PRUEBA
-               DISPLAY "         Esperado: " WS-ESPERADO
-               DISPLAY "         Obtenido: " WS-RESULTADO
-           END-IF.
-           EXIT.
+               CALL "CALCULATOR" USING CALC-PARAMS
+
+        MOVE CALC-RESULT TO WS-ASSERT-ACTUAL
+        PERFORM ASSERT-EQUAL
+    END-PERFORM
+
+*> Reporte final
+    PERFORM ASSERT-REPORT
+
+           STOP RUN.
+
+       COPY ASSERTS.
+
+       END PROGRAM RUN-TESTS.

@@ -1,15 +1,13 @@
-# Makefile para CALCULATOR — COBOL
+# Makefile para NUMBERS — COBOL
 # Compilador: GnuCOBOL (cobc)
 # Formato: libre (free format)
-# Copybooks: src/ y test/
+# Copybooks: src/copybooks/ y test/
 
 COBC      = cobc
-CFLAGS    = -x -free -I$(SRC_DIR) -I$(TEST_DIR)
-SRC_DIR   = src
+CFLAGS    = -x -free -Isrc/copybooks -Itest
+SRC_DIR   = src/lib
 TEST_DIR  = test
 TARGET    = run_tests
-
-.SUFFIXES: .cbl .cob
 
 .PHONY: all build test clean
 
@@ -18,7 +16,10 @@ all: build
 # Compila el ejecutable de pruebas con todos los fuentes
 build: $(TARGET)
 
-$(TARGET): $(TEST_DIR)/RUN-TESTS.cbl $(SRC_DIR)/CALCULATOR.cbl
+$(TARGET): $(TEST_DIR)/RUN-TESTS.cbl \
+           $(TEST_DIR)/RECURSIVE-TESTS.cbl \
+           $(TEST_DIR)/ITERATIVE-TESTS.cbl \
+           $(SRC_DIR)/NUMBERS.cbl
 	$(COBC) $(CFLAGS) -o $@ $^
 
 # Ejecuta las pruebas

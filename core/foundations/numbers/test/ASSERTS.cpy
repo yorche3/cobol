@@ -10,16 +10,16 @@ ASSERT-EQUAL.
     ELSE
         ADD 1 TO WS-ASSERT-FAILED
         DISPLAY "  [FAIL] " WS-ASSERT-NAME
-        DISPLAY "         Expected: " WS-ASSERT-EXPECTED
-        DISPLAY "           Actual: " WS-ASSERT-ACTUAL
+                DISPLAY "         Expected: " WS-ASSERT-EXPECTED
+                DISPLAY "           Actual: " WS-ASSERT-ACTUAL
     END-IF.
 
 ASSERT-REPORT.
     DISPLAY " "
-    DISPLAY "RESUMEN:"
+    DISPLAY "SUMMARY:"
     DISPLAY "  Total:    " WS-ASSERT-TOTAL
-    DISPLAY "  Passed:  " WS-ASSERT-PASSED
-    DISPLAY "  Failed:  " WS-ASSERT-FAILED
+    DISPLAY "  Passed:   " WS-ASSERT-PASSED
+    DISPLAY "  Failed:   " WS-ASSERT-FAILED
     IF WS-ASSERT-FAILED > 0
         DISPLAY "  >>> SOME TESTS FAILED <<<"
         MOVE 1 TO RETURN-CODE
