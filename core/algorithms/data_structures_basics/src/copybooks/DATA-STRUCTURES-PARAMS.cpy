@@ -1,13 +1,14 @@
 *> DATA-STRUCTURES-PARAMS.cpy
-*> Tipos de dominio compartidos por DATA-STRUCTURES.
+*> Tipos de dominio compartidos por los subprogramas de DATA-STRUCTURES.
+*>
+*> El nodo vive en memoria dinamica: las estructuras guardan solo su direccion
+*> (USAGE POINTER) y cada subprograma que toca sus campos superpone DS-NODE a
+*> esa direccion con SET ADDRESS OF. DS-NODE lleva BASED porque no ocupa
+*> almacenamiento propio: su tamano lo usa ALLOCATE para reservar el bloque.
 
 78 DS-FAILURE-VALUE      VALUE -1.
 
-01 DS-TEMP-NODE.
-   05 DS-TEMP-NODE-VALUE      PIC S9(9).
-   05 DS-TEMP-NODE-NEXT       USAGE POINTER.
-
-01 DS-NODE.
+01 DS-NODE BASED.
    05 DS-NODE-VALUE      PIC S9(9).
    05 DS-NODE-NEXT       USAGE POINTER.
 
