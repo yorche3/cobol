@@ -5,6 +5,7 @@
 
 COBC      = cobc
 CFLAGS    = -x -free -Isrc/copybooks -Itest
+SRC_DIR   = src/lib
 TEST_DIR  = test
 TARGET    = run_tests
 
@@ -14,7 +15,8 @@ all: build
 
 build: $(TARGET)
 
-$(TARGET): $(TEST_DIR)/RUN-TESTS.cbl
+$(TARGET): $(TEST_DIR)/RUN-TESTS.cbl \
+           $(SRC_DIR)/DATA-STRUCTURES.cbl
 	$(COBC) $(CFLAGS) -o $@ $^
 
 test: build
