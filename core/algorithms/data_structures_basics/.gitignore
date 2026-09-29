@@ -1,0 +1,26 @@
+# COBOL compilation artifacts
+*.o
+*.so
+*.dll
+*.exe
+*.obj
+*.out
+
+# Executables
+run_tests
+run_tests.exe
+
+# Build directories
+target/
+build/
+dist/
+
+# IDE files
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
