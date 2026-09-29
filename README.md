@@ -11,6 +11,7 @@ Usa `make` como build system y aserciones artesanales via `COPY` para pruebas un
 | Módulo | Descripción |
 |--------|-------------|
 | [`core/foundations/`](core/foundations/) | **Fase 0 — Fundamentos**: `helloworld`, `hellouser`, `calculator`, `numbers` |
+| [`core/algorithms/`](core/algorithms/) | **Fase 1 — Algoritmos Puros**: `naive_sort`, `data_structures_basics` |
 
 ---
 
@@ -32,6 +33,10 @@ make test
 # Numbers Tests
 cd core/foundations/numbers
 make test
+
+# Data Structures Basics Tests
+cd core/algorithms/data_structures_basics
+make clean && make test
 ```
 
 ---
