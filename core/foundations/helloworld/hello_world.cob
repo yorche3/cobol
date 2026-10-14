@@ -1,5 +1,5 @@
 IDENTIFICATION DIVISION.
 PROGRAM-ID. HelloWorld.
 PROCEDURE DIVISION.
-    DISPLAY "Hello World! from Cobol!"
+    DISPLAY "Hello, World! from COBOL!"
     STOP RUN.
