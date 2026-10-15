@@ -46,7 +46,7 @@ hellouser/
 **ES:** El flujo del programa es:
 
 1. Declarar una variable `user-name` de tipo alfanumérico con `PIC X(100)`.
-2. Imprimir `"Hello, what is your name?"` con `DISPLAY`.
+2. Imprimir `"Enter your name: "` con `DISPLAY`.
 3. Leer el nombre con `ACCEPT user-name`.
 4. Imprimir el saludo con `DISPLAY`.
 5. Terminar con `STOP RUN`.
@@ -54,7 +54,7 @@ hellouser/
 **EN:** Program flow:
 
 1. Declare a `user-name` alphanumeric variable with `PIC X(100)`.
-2. Print `"Hello, what is your name?"` with `DISPLAY`.
+2. Print `"Enter your name: "` with `DISPLAY`.
 3. Read the name with `ACCEPT user-name`.
 4. Print the greeting with `DISPLAY`.
 5. Terminate with `STOP RUN`.
@@ -71,7 +71,7 @@ working-storage section.
 01 user-name pic x(100).
 
 procedure division.
-    display "Hello, what is your name?".
+    display "Enter your name: ".
     accept user-name.
     display "Hello, " user-name "!".
     stop run.
@@ -127,7 +127,7 @@ cobc -x -o hello_user hello_user.cob
 **Salida esperada / Expected output:**
 
 ```text
-Hello, what is your name?
+Enter your name: 
 Ada
 Hello, Ada!
 ```
