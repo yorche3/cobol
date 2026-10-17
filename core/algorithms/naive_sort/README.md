@@ -271,6 +271,10 @@ versión con acumulador y qué tests cubren su comportamiento.
 
 **EN:** COBOL is a procedural language that does not naturally support recursion. All algorithms were implemented iteratively. Array handling is performed using structures with OCCURS clauses. The implementation follows the pattern of returning a return code (RETURN-CODE) to indicate success or failure. The project includes a reusable unit testing framework based on assertion macros.
 
+**ES:** Entrada nula o inválida: COBOL no admite `null` ni una secuencia sin longitud declarada, así que el indicador de fallo del lenguaje **no es representable** aquí. La representación equivalente es la estructura `OCCURS` acompañada de su longitud (`WS-LENGTH`): una longitud `0` es la secuencia vacía y se devuelve igual, sin ninguna iteración. No hay caso nulo que probar y ninguna función lanza excepciones —COBOL no las tiene—; el `RETURN-CODE` del párrafo anterior es la salida del programa de prueba, no parte del contrato de las funciones.
+
+**EN:** Null or invalid input: COBOL admits neither `null` nor a sequence without a declared length, so the language's failure indicator **is not representable** here. The equivalent representation is the `OCCURS` structure together with its length (`WS-LENGTH`): a length of `0` is the empty sequence and is returned as is, with no iterations. There is no null case to test and no function throws exceptions — COBOL has none; the `RETURN-CODE` mentioned above is the test program's exit code, not part of the functions' contract.
+
 **ES:** Este proyecto también está implementado en otros lenguajes. Explora el
 repositorio principal para consultar las demás versiones.
 
