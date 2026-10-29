@@ -1,0 +1,29 @@
+*> Tipos locales: Node se expresa por valor embebido, sin tipo base.
+*> Los registros BASED describen bloques dinamicos, no reservan memoria.
+*> Numericos en COMP-5 (binario nativo de 4 bytes): quien llama declara sus
+*> areas con este mismo USAGE y ancho.
+
+78 DSA-FAILURE-VALUE       VALUE -1.
+
+01 DSA-TREE-NODE BASED.
+   05 DSA-TREE-NODE-VALUE  PIC S9(9) COMP-5.
+   05 DSA-TREE-NODE-LEFT   USAGE POINTER.
+   05 DSA-TREE-NODE-RIGHT  USAGE POINTER.
+
+01 DSA-BINARY-TREE.
+   05 DSA-TREE-ROOT        USAGE POINTER.
+   05 DSA-TREE-COUNT       PIC 9(9) COMP-5.
+
+01 DSA-GRAPH-NODE BASED.
+   05 DSA-GRAPH-NODE-VALUE PIC S9(9) COMP-5.
+   05 DSA-GRAPH-NEIGHBORS  USAGE POINTER.
+   05 DSA-GRAPH-NEXT       USAGE POINTER.
+
+01 DSA-NEIGHBOR-NODE BASED.
+   05 DSA-NEIGHBOR-LABEL   PIC S9(9) COMP-5.
+   05 DSA-NEIGHBOR-NEXT    USAGE POINTER.
+
+01 DSA-GRAPH.
+   05 DSA-GRAPH-VERTICES   USAGE POINTER.
+   05 DSA-VERTEX-COUNT     PIC 9(9) COMP-5.
+   05 DSA-EDGE-COUNT       PIC 9(9) COMP-5.

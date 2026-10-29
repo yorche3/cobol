@@ -15,8 +15,10 @@ all: build
 
 build: $(TARGET)
 
-$(TARGET): $(TEST_DIR)/RUN-TESTS.cbl
-	$(COBC) $(CFLAGS) -o $@ $^
+$(TARGET): $(TEST_DIR)/RUN-TESTS.cbl \
+           $(SRC_DIR)/DATA-STRUCTURES-ADVANCED.cbl \
+           src/copybooks/DATA-STRUCTURES-ADVANCED-PARAMS.cpy
+	$(COBC) $(CFLAGS) -o $@ $(filter %.cbl,$^)
 
 test: build
 	./$(TARGET)
