@@ -32,7 +32,10 @@
 *> GET-NEIGHBORS entrega una copia enlazada de DSA-NEIGHBOR-NODE:
 *> puntero y longitud S9(9), -1 si falta el vertice, 0 si esta aislado.
 *> La copia pertenece al llamador, que libera sus nodos con
-*> FREE-NEIGHBORS.
+*> FREE-NEIGHBORS: son nodos nuevos, nunca los de la adyacencia interna,
+*> de modo que GRAPH-FREE y FREE-NEIGHBORS no pueden liberar el mismo
+*> bloque. Devolver la lista interna rompe esa separacion y el
+*> aislamiento del resultado.
 *> Los constructores de nodos entregan un POINTER; los de estructuras
 *> reciben el registro del copybook. Los setters mutan, sin resultado.
 *> Los esqueletos solo entregan ausencia, fallo o valores por defecto.
