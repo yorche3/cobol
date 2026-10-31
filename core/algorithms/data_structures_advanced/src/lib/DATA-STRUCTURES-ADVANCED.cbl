@@ -1,44 +1,24 @@
-*> Contrato y esqueletos, sin algoritmos ni asignacion de nodos.
-*> Parametros BY REFERENCE, en el orden de PROCEDURE DIVISION USING.
-*> Nodo/enlace: POINTER. Numericos (valor, etiqueta, resultado, contador):
-*> COMP-5, binario nativo de 4 bytes; quien llama declara sus areas con el
-*> mismo USAGE y ancho que el copybook.
-*> Bandera: PIC 9, 1 verdadero y 0 falso; solo la usa IS-EMPTY.
+*> Contrato: parametros BY REFERENCE, orden de PROCEDURE DIVISION USING.
+*> Nodo/enlace: POINTER. Numerico (valor, etiqueta, resultado, contador):
+*> S9(9)/9(9) COMP-5. Bandera: PIC 9 (1 si, 0 no); solo IS-EMPTY.
+*> Ausencia de enlace: NULL.
 *>
-*> Resultados, por operacion:
-*> - INSERT, ADD-VERTEX: 0 exito; DSA-FAILURE-VALUE (-1) solo si ALLOCATE
-*>   no obtiene memoria. Sin capacidad ni estado lleno: el agotamiento no
-*>   se simula y la suite no lo prueba.
-*> - ADD-EDGE: 0 exito, incluidos el bucle y la arista repetida; -1 si
-*>   falta alguno de los dos extremos, sin registrar vertices implicitos.
-*> - CONTAINS, HAS-EDGE: 0 = si, -1 = no. Es la columna exito/fallo de la
-*>   politica de resultados, no la bandera PIC 9; arista ausente y extremo
-*>   inexistente responden igual (-1), sin tercer estado.
-*> - IS-EMPTY: PIC 9, 1 = verdadero y 0 = falso, y nunca falla. Cuidado:
-*>   0 significa "si" en CONTAINS/HAS-EDGE y "falso" en IS-EMPTY.
-*> - Ausencia de enlace: NULL.
-*> - Comparacion: con COMP-5 el resultado no se compara por texto; DISPLAY
-*>   imprime -0000000001 y 0000000000. Comparar con DSA-FAILURE-VALUE o 0.
-*> - No mezclar areas: la bandera PIC 9 vive en su propio campo y nunca se
-*>   escribe sobre un resultado S9(9) COMP-5.
+*> Resultados:
+*>   INSERT/ADD-VERTEX/ADD-EDGE/CONTAINS/HAS-EDGE: 0 exito, -1 fallo.
+*>   ADD-EDGE falla solo por extremo ausente; bucle y arista repetida = 0.
+*>   INSERT/ADD-VERTEX fallan solo por OOM (ALLOCATE); no se simula.
+*>   IS-EMPTY: PIC 9, nunca falla (0 en CONTAINS/HAS-EDGE significa "si",
+*>   en IS-EMPTY significa "falso").
+*>   GET-NEIGHBORS: -1 vertice ausente, 0 aislado; copia enlazada nueva.
 *>
-*> Memoria: COBOL no libera solo. Todo bloque reservado con ALLOCATE queda
-*> ocupado hasta su FREE, asi que una prueba que no libera filtra sus
-*> nodos mientras viva el proceso. TREE-NODE-FREE, BINARY-TREE-FREE,
-*> GRAPH-FREE y FREE-NEIGHBORS son las unicas salidas de liberacion y
-*> dejan el puntero o el registro en su estado vacio y reutilizable.
-*> Liberar dos veces el mismo bloque es error del llamador.
+*> Memoria: sin liberacion automatica. El llamador debe invocar
+*> TREE-NODE-FREE, BINARY-TREE-FREE, GRAPH-FREE o FREE-NEIGHBORS.
+*> Doble FREE es error. GET-NEIGHBORS entrega nodos NUEVOS, nunca la
+*> adyacencia interna: FREE-NEIGHBORS y GRAPH-FREE no se solapan.
 *>
-*> GET-NEIGHBORS entrega una copia enlazada de DSA-NEIGHBOR-NODE:
-*> puntero y longitud S9(9), -1 si falta el vertice, 0 si esta aislado.
-*> La copia pertenece al llamador, que libera sus nodos con
-*> FREE-NEIGHBORS: son nodos nuevos, nunca los de la adyacencia interna,
-*> de modo que GRAPH-FREE y FREE-NEIGHBORS no pueden liberar el mismo
-*> bloque. Devolver la lista interna rompe esa separacion y el
-*> aislamiento del resultado.
-*> Los constructores de nodos entregan un POINTER; los de estructuras
-*> reciben el registro del copybook. Los setters mutan, sin resultado.
-*> Los esqueletos solo entregan ausencia, fallo o valores por defecto.
+*> Constructores de nodo devuelven POINTER; constructores de estructura
+*> reciben el registro del copybook; setters mutan sin devolver resultado.
+*> Los esqueletos solo devuelven ausencia, fallo o valores por defecto.
 
 IDENTIFICATION DIVISION.
 PROGRAM-ID. TREE-NODE-INIT.
@@ -49,6 +29,11 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-VALUE            PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING LN-NODE LN-VALUE.
     SET LN-NODE TO NULL
+    ALLOCATE DSA-TREE-NODE
+    MOVE LN-VALUE TO DSA-TREE-NODE-VALUE
+    SET DSA-TREE-NODE-LEFT TO NULL
+    SET DSA-TREE-NODE-RIGHT TO NULL
+    SET LN-NODE TO ADDRESS OF DSA-TREE-NODE
     GOBACK.
 END PROGRAM TREE-NODE-INIT.
 
@@ -60,7 +45,8 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NODE             USAGE POINTER.
 01 LN-RESULT           PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING LN-NODE LN-RESULT.
-    MOVE 0 TO LN-RESULT
+    SET ADDRESS OF DSA-TREE-NODE TO LN-NODE
+    MOVE DSA-TREE-NODE-VALUE TO LN-RESULT
     GOBACK.
 END PROGRAM TREE-NODE-GET-VALUE.
 
@@ -72,7 +58,8 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NODE             USAGE POINTER.
 01 LN-LEFT             USAGE POINTER.
 PROCEDURE DIVISION USING LN-NODE LN-LEFT.
-    SET LN-LEFT TO NULL
+    SET ADDRESS OF DSA-TREE-NODE TO LN-NODE
+    MOVE DSA-TREE-NODE-LEFT TO LN-LEFT
     GOBACK.
 END PROGRAM TREE-NODE-GET-LEFT.
 
@@ -84,7 +71,8 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NODE             USAGE POINTER.
 01 LN-RIGHT            USAGE POINTER.
 PROCEDURE DIVISION USING LN-NODE LN-RIGHT.
-    SET LN-RIGHT TO NULL
+    SET ADDRESS OF DSA-TREE-NODE TO LN-NODE
+    MOVE DSA-TREE-NODE-RIGHT TO LN-RIGHT
     GOBACK.
 END PROGRAM TREE-NODE-GET-RIGHT.
 
@@ -96,6 +84,8 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NODE             USAGE POINTER.
 01 LN-LEFT             USAGE POINTER.
 PROCEDURE DIVISION USING LN-NODE LN-LEFT.
+    SET ADDRESS OF DSA-TREE-NODE TO LN-NODE
+    SET DSA-TREE-NODE-LEFT TO LN-LEFT
     GOBACK.
 END PROGRAM TREE-NODE-SET-LEFT.
 
@@ -107,18 +97,34 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NODE             USAGE POINTER.
 01 LN-RIGHT            USAGE POINTER.
 PROCEDURE DIVISION USING LN-NODE LN-RIGHT.
+    SET ADDRESS OF DSA-TREE-NODE TO LN-NODE
+    SET DSA-TREE-NODE-RIGHT TO LN-RIGHT
     GOBACK.
 END PROGRAM TREE-NODE-SET-RIGHT.
 
-*> Libera el subarbol del nodo entregado y deja el puntero en NULL; con
-*> NULL no hace nada. El esqueleto no reserva ni libera bloques.
+*> Libera el subarbol completo. Post-orden: hijos antes que el padre.
+*> Con LN-NODE = NULL no hace nada; deja el puntero en NULL.
 IDENTIFICATION DIVISION.
-PROGRAM-ID. TREE-NODE-FREE.
+PROGRAM-ID. TREE-NODE-FREE IS RECURSIVE.
 DATA DIVISION.
+LOCAL-STORAGE SECTION.
+01 WS-LEFT             USAGE POINTER.
+01 WS-RIGHT            USAGE POINTER.
+01 WS-SAVED            USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NODE             USAGE POINTER.
 PROCEDURE DIVISION USING LN-NODE.
+    IF LN-NODE = NULL
+        GOBACK
+    END-IF
+    SET WS-SAVED TO LN-NODE
+    SET ADDRESS OF DSA-TREE-NODE TO WS-SAVED
+    SET WS-LEFT TO DSA-TREE-NODE-LEFT
+    SET WS-RIGHT TO DSA-TREE-NODE-RIGHT
+    CALL "TREE-NODE-FREE" USING WS-LEFT
+    CALL "TREE-NODE-FREE" USING WS-RIGHT
+    FREE WS-SAVED
     SET LN-NODE TO NULL
     GOBACK.
 END PROGRAM TREE-NODE-FREE.
@@ -136,11 +142,66 @@ END PROGRAM BINARY-TREE-INIT.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. BINARY-TREE-INSERT.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-NEW-NODE          USAGE POINTER.
+01 WS-CURRENT           USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-VALUE            PIC S9(9) COMP-5.
 01 LN-RESULT           PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-BINARY-TREE LN-VALUE LN-RESULT.
+    IF DSA-TREE-ROOT = NULL
+        CALL "TREE-NODE-INIT" USING WS-NEW-NODE LN-VALUE
+        IF WS-NEW-NODE = NULL
+            MOVE DSA-FAILURE-VALUE TO LN-RESULT
+            GOBACK
+        END-IF
+        SET DSA-TREE-ROOT TO WS-NEW-NODE
+        MOVE 1 TO DSA-TREE-COUNT
+        MOVE 0 TO LN-RESULT
+        GOBACK
+    END-IF
+
+    *> Duplicado: exito sin ALLOCATE. Hueco: ALLOCATE lazy y enlazar.
+    SET WS-CURRENT TO DSA-TREE-ROOT
+    PERFORM UNTIL WS-CURRENT = NULL
+        SET ADDRESS OF DSA-TREE-NODE TO WS-CURRENT
+        EVALUATE TRUE
+            WHEN LN-VALUE = DSA-TREE-NODE-VALUE
+                MOVE 0 TO LN-RESULT
+                GOBACK
+            WHEN LN-VALUE < DSA-TREE-NODE-VALUE
+                IF DSA-TREE-NODE-LEFT = NULL
+                    CALL "TREE-NODE-INIT" USING WS-NEW-NODE LN-VALUE
+                    IF WS-NEW-NODE = NULL
+                        MOVE DSA-FAILURE-VALUE TO LN-RESULT
+                        GOBACK
+                    END-IF
+                    SET DSA-TREE-NODE-LEFT TO WS-NEW-NODE
+                    ADD 1 TO DSA-TREE-COUNT
+                    MOVE 0 TO LN-RESULT
+                    GOBACK
+                ELSE
+                    SET WS-CURRENT TO DSA-TREE-NODE-LEFT
+                END-IF
+            WHEN OTHER
+                IF DSA-TREE-NODE-RIGHT = NULL
+                    CALL "TREE-NODE-INIT" USING WS-NEW-NODE LN-VALUE
+                    IF WS-NEW-NODE = NULL
+                        MOVE DSA-FAILURE-VALUE TO LN-RESULT
+                        GOBACK
+                    END-IF
+                    SET DSA-TREE-NODE-RIGHT TO WS-NEW-NODE
+                    ADD 1 TO DSA-TREE-COUNT
+                    MOVE 0 TO LN-RESULT
+                    GOBACK
+                ELSE
+                    SET WS-CURRENT TO DSA-TREE-NODE-RIGHT
+                END-IF
+        END-EVALUATE
+    END-PERFORM
+
+    *> Inalcanzable: solo se sale por GOBACK.
     MOVE DSA-FAILURE-VALUE TO LN-RESULT
     GOBACK.
 END PROGRAM BINARY-TREE-INSERT.
@@ -148,11 +209,27 @@ END PROGRAM BINARY-TREE-INSERT.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. BINARY-TREE-CONTAINS.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-CURRENT          USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-VALUE            PIC S9(9) COMP-5.
 01 LN-RESULT           PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-BINARY-TREE LN-VALUE LN-RESULT.
+    SET WS-CURRENT TO DSA-TREE-ROOT
+    PERFORM UNTIL WS-CURRENT = NULL
+        SET ADDRESS OF DSA-TREE-NODE TO WS-CURRENT
+        IF LN-VALUE = DSA-TREE-NODE-VALUE
+            MOVE 0 TO LN-RESULT
+            GOBACK
+        ELSE
+            IF LN-VALUE < DSA-TREE-NODE-VALUE
+                SET WS-CURRENT TO DSA-TREE-NODE-LEFT
+            ELSE
+                SET WS-CURRENT TO DSA-TREE-NODE-RIGHT
+            END-IF
+        END-IF
+    END-PERFORM
     MOVE DSA-FAILURE-VALUE TO LN-RESULT
     GOBACK.
 END PROGRAM BINARY-TREE-CONTAINS.
@@ -164,7 +241,11 @@ LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-FLAG             PIC 9.
 PROCEDURE DIVISION USING DSA-BINARY-TREE LN-FLAG.
-    MOVE 0 TO LN-FLAG
+    IF DSA-TREE-ROOT = NULL
+        MOVE 1 TO LN-FLAG
+    ELSE
+        MOVE 0 TO LN-FLAG
+    END-IF
     GOBACK.
 END PROGRAM BINARY-TREE-IS-EMPTY.
 
@@ -175,23 +256,29 @@ LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-RESULT           PIC 9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-BINARY-TREE LN-RESULT.
-    MOVE 0 TO LN-RESULT
+    MOVE DSA-TREE-COUNT TO LN-RESULT
     GOBACK.
 END PROGRAM BINARY-TREE-SIZE.
 
-*> Libera todos los nodos del arbol y deja el registro vacio y
-*> reutilizable, igual que BINARY-TREE-INIT. El esqueleto solo vacia.
+*> Delega la liberacion en TREE-NODE-FREE y vacia el registro.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. BINARY-TREE-FREE.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-NODE             USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 PROCEDURE DIVISION USING DSA-BINARY-TREE.
-    INITIALIZE DSA-BINARY-TREE
+    SET WS-NODE TO DSA-TREE-ROOT
+    CALL "TREE-NODE-FREE" USING WS-NODE
+    SET DSA-TREE-ROOT TO NULL
+    MOVE 0 TO DSA-TREE-COUNT
     GOBACK.
 END PROGRAM BINARY-TREE-FREE.
 
 *> GraphNode.init es interno a Graph, no una operacion publica del grafo.
+*> Reserva el vertice con su etiqueta, sin adyacencia y sin siguiente en
+*> el registro; el enlace lo pone GRAPH-ADD-VERTEX.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-NODE-INIT.
 DATA DIVISION.
@@ -201,8 +288,34 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-LABEL            PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING LN-NODE LN-LABEL.
     SET LN-NODE TO NULL
+    ALLOCATE DSA-GRAPH-NODE
+    MOVE LN-LABEL TO DSA-GRAPH-NODE-VALUE
+    SET DSA-GRAPH-NEIGHBORS TO NULL
+    SET DSA-GRAPH-NEXT TO NULL
+    SET LN-NODE TO ADDRESS OF DSA-GRAPH-NODE
     GOBACK.
 END PROGRAM GRAPH-NODE-INIT.
+
+*> Interno a Graph: recorre el registro enlazado y entrega el puntero del
+*> vertice con esa etiqueta, o NULL si no esta registrado. Cuesta O(V).
+IDENTIFICATION DIVISION.
+PROGRAM-ID. GRAPH-FIND-NODE.
+DATA DIVISION.
+LINKAGE SECTION.
+COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
+01 LN-LABEL            PIC S9(9) COMP-5.
+01 LN-NODE             USAGE POINTER.
+PROCEDURE DIVISION USING DSA-GRAPH LN-LABEL LN-NODE.
+    SET LN-NODE TO DSA-GRAPH-VERTICES
+    PERFORM UNTIL LN-NODE = NULL
+        SET ADDRESS OF DSA-GRAPH-NODE TO LN-NODE
+        IF DSA-GRAPH-NODE-VALUE = LN-LABEL
+            GOBACK
+        END-IF
+        SET LN-NODE TO DSA-GRAPH-NEXT
+    END-PERFORM
+    GOBACK.
+END PROGRAM GRAPH-FIND-NODE.
 
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-INIT.
@@ -217,18 +330,45 @@ END PROGRAM GRAPH-INIT.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-ADD-VERTEX.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-FOUND            USAGE POINTER.
+01 WS-NEW-VERTEX       USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-LABEL            PIC S9(9) COMP-5.
 01 LN-RESULT           PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-GRAPH LN-LABEL LN-RESULT.
-    MOVE DSA-FAILURE-VALUE TO LN-RESULT
+    *> Vertice repetido: exito sin nodo nuevo, sin tocar la adyacencia y
+    *> sin mover el contador.
+    CALL "GRAPH-FIND-NODE" USING DSA-GRAPH LN-LABEL WS-FOUND
+    IF WS-FOUND NOT = NULL
+        MOVE 0 TO LN-RESULT
+        GOBACK
+    END-IF
+    *> Vertice nuevo: el registro es una lista enlazada, se enlaza a la
+    *> cabeza para registrar en O(1).
+    CALL "GRAPH-NODE-INIT" USING WS-NEW-VERTEX LN-LABEL
+    IF WS-NEW-VERTEX = NULL
+        MOVE DSA-FAILURE-VALUE TO LN-RESULT
+        GOBACK
+    END-IF
+    SET ADDRESS OF DSA-GRAPH-NODE TO WS-NEW-VERTEX
+    SET DSA-GRAPH-NEXT TO DSA-GRAPH-VERTICES
+    SET DSA-GRAPH-VERTICES TO WS-NEW-VERTEX
+    ADD 1 TO DSA-VERTEX-COUNT
+    MOVE 0 TO LN-RESULT
     GOBACK.
 END PROGRAM GRAPH-ADD-VERTEX.
 
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-ADD-EDGE.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-SOURCE           USAGE POINTER.
+01 WS-TARGET           USAGE POINTER.
+01 WS-CURRENT          USAGE POINTER.
+01 WS-PREVIOUS         USAGE POINTER.
+01 WS-NEW-NEIGHBOR     USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-U                PIC S9(9) COMP-5.
@@ -236,25 +376,103 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-RESULT           PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-GRAPH LN-U LN-V LN-RESULT.
     MOVE DSA-FAILURE-VALUE TO LN-RESULT
+    *> Los dos extremos deben estar registrados: no se crean implicitos y
+    *> el fallo no muta nada.
+    CALL "GRAPH-FIND-NODE" USING DSA-GRAPH LN-U WS-SOURCE
+    IF WS-SOURCE = NULL
+        GOBACK
+    END-IF
+    CALL "GRAPH-FIND-NODE" USING DSA-GRAPH LN-V WS-TARGET
+    IF WS-TARGET = NULL
+        GOBACK
+    END-IF
+    *> La adyacencia se mantiene ordenada: se avanza hasta la primera
+    *> etiqueta mayor o igual que v, guardando el nodo anterior.
+    SET ADDRESS OF DSA-GRAPH-NODE TO WS-SOURCE
+    SET WS-CURRENT TO DSA-GRAPH-NEIGHBORS
+    SET WS-PREVIOUS TO NULL
+    PERFORM UNTIL WS-CURRENT = NULL
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-CURRENT
+        IF DSA-NEIGHBOR-LABEL >= LN-V
+            EXIT PERFORM
+        END-IF
+        SET WS-PREVIOUS TO WS-CURRENT
+        SET WS-CURRENT TO DSA-NEIGHBOR-NEXT
+    END-PERFORM
+    *> Arista repetida, bucle incluido: exito, sin duplicar ni contar.
+    IF WS-CURRENT NOT = NULL
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-CURRENT
+        IF DSA-NEIGHBOR-LABEL = LN-V
+            MOVE 0 TO LN-RESULT
+            GOBACK
+        END-IF
+    END-IF
+    *> Arista nueva: nodo de adyacencia delante de la primera etiqueta
+    *> mayor, de modo que el recorrido sigue ascendente.
+    ALLOCATE DSA-NEIGHBOR-NODE
+    MOVE LN-V TO DSA-NEIGHBOR-LABEL
+    SET DSA-NEIGHBOR-NEXT TO WS-CURRENT
+    SET WS-NEW-NEIGHBOR TO ADDRESS OF DSA-NEIGHBOR-NODE
+    IF WS-PREVIOUS = NULL
+        SET ADDRESS OF DSA-GRAPH-NODE TO WS-SOURCE
+        SET DSA-GRAPH-NEIGHBORS TO WS-NEW-NEIGHBOR
+    ELSE
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-PREVIOUS
+        SET DSA-NEIGHBOR-NEXT TO WS-NEW-NEIGHBOR
+    END-IF
+    ADD 1 TO DSA-EDGE-COUNT
+    MOVE 0 TO LN-RESULT
     GOBACK.
 END PROGRAM GRAPH-ADD-EDGE.
 
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-HAS-EDGE.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-SOURCE           USAGE POINTER.
+01 WS-CURRENT          USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-U                PIC S9(9) COMP-5.
 01 LN-V                PIC S9(9) COMP-5.
 01 LN-RESULT           PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-GRAPH LN-U LN-V LN-RESULT.
+    *> 0 = la arista existe, -1 = no existe o falta el origen.
     MOVE DSA-FAILURE-VALUE TO LN-RESULT
+    CALL "GRAPH-FIND-NODE" USING DSA-GRAPH LN-U WS-SOURCE
+    IF WS-SOURCE = NULL
+        GOBACK
+    END-IF
+    *> La adyacencia esta ordenada: se corta en la primera etiqueta mayor
+    *> o igual que v, sin recorrerla entera.
+    SET ADDRESS OF DSA-GRAPH-NODE TO WS-SOURCE
+    SET WS-CURRENT TO DSA-GRAPH-NEIGHBORS
+    PERFORM UNTIL WS-CURRENT = NULL
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-CURRENT
+        IF DSA-NEIGHBOR-LABEL >= LN-V
+            EXIT PERFORM
+        END-IF
+        SET WS-CURRENT TO DSA-NEIGHBOR-NEXT
+    END-PERFORM
+    IF WS-CURRENT NOT = NULL
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-CURRENT
+        IF DSA-NEIGHBOR-LABEL = LN-V
+            MOVE 0 TO LN-RESULT
+        END-IF
+    END-IF
     GOBACK.
 END PROGRAM GRAPH-HAS-EDGE.
 
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-GET-NEIGHBORS.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-SOURCE           USAGE POINTER.
+01 WS-CURRENT          USAGE POINTER.
+01 WS-NEXT-SOURCE      USAGE POINTER.
+01 WS-TAIL             USAGE POINTER.
+01 WS-NEW-NEIGHBOR     USAGE POINTER.
+01 WS-LABEL            PIC S9(9) COMP-5.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-U                PIC S9(9) COMP-5.
@@ -263,6 +481,37 @@ COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 PROCEDURE DIVISION USING DSA-GRAPH LN-U LN-NEIGHBORS LN-COUNT.
     SET LN-NEIGHBORS TO NULL
     MOVE DSA-FAILURE-VALUE TO LN-COUNT
+    CALL "GRAPH-FIND-NODE" USING DSA-GRAPH LN-U WS-SOURCE
+    IF WS-SOURCE = NULL
+        GOBACK
+    END-IF
+    *> Copia independiente: nodos nuevos encadenados por la cola, para no
+    *> convertir el recorrido en O(d^2). El llamador la libera con
+    *> FREE-NEIGHBORS y puede modificarla sin tocar el grafo.
+    MOVE 0 TO LN-COUNT
+    SET ADDRESS OF DSA-GRAPH-NODE TO WS-SOURCE
+    SET WS-CURRENT TO DSA-GRAPH-NEIGHBORS
+    SET WS-TAIL TO NULL
+    PERFORM UNTIL WS-CURRENT = NULL
+        *> Se leen etiqueta y siguiente antes del ALLOCATE, que reapunta la
+        *> vista al bloque nuevo.
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-CURRENT
+        MOVE DSA-NEIGHBOR-LABEL TO WS-LABEL
+        SET WS-NEXT-SOURCE TO DSA-NEIGHBOR-NEXT
+        ALLOCATE DSA-NEIGHBOR-NODE
+        MOVE WS-LABEL TO DSA-NEIGHBOR-LABEL
+        SET DSA-NEIGHBOR-NEXT TO NULL
+        SET WS-NEW-NEIGHBOR TO ADDRESS OF DSA-NEIGHBOR-NODE
+        IF WS-TAIL = NULL
+            SET LN-NEIGHBORS TO WS-NEW-NEIGHBOR
+        ELSE
+            SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-TAIL
+            SET DSA-NEIGHBOR-NEXT TO WS-NEW-NEIGHBOR
+        END-IF
+        SET WS-TAIL TO WS-NEW-NEIGHBOR
+        ADD 1 TO LN-COUNT
+        SET WS-CURRENT TO WS-NEXT-SOURCE
+    END-PERFORM
     GOBACK.
 END PROGRAM GRAPH-GET-NEIGHBORS.
 
@@ -273,7 +522,13 @@ LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-FLAG             PIC 9.
 PROCEDURE DIVISION USING DSA-GRAPH LN-FLAG.
-    MOVE 0 TO LN-FLAG
+    *> Sin vertices registrados el grafo esta vacio; el contador siempre
+    *> acompana al registro, pero se lee el puntero porque es la fuente.
+    IF DSA-GRAPH-VERTICES = NULL
+        MOVE 1 TO LN-FLAG
+    ELSE
+        MOVE 0 TO LN-FLAG
+    END-IF
     GOBACK.
 END PROGRAM GRAPH-IS-EMPTY.
 
@@ -284,7 +539,7 @@ LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-RESULT           PIC 9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-GRAPH LN-RESULT.
-    MOVE 0 TO LN-RESULT
+    MOVE DSA-VERTEX-COUNT TO LN-RESULT
     GOBACK.
 END PROGRAM GRAPH-VERTEX-COUNT.
 
@@ -295,18 +550,40 @@ LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-RESULT           PIC 9(9) COMP-5.
 PROCEDURE DIVISION USING DSA-GRAPH LN-RESULT.
-    MOVE 0 TO LN-RESULT
+    MOVE DSA-EDGE-COUNT TO LN-RESULT
     GOBACK.
 END PROGRAM GRAPH-EDGE-COUNT.
 
 *> Libera la adyacencia de cada vertice y despues los vertices; el
-*> registro queda como GRAPH-INIT. El esqueleto solo vacia.
+*> registro queda como GRAPH-INIT. Recorre sin recursion: guarda el
+*> siguiente vertice antes de liberar el actual.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. GRAPH-FREE.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-CURRENT          USAGE POINTER.
+01 WS-NEXT-VERTEX      USAGE POINTER.
+01 WS-NEIGHBOR         USAGE POINTER.
+01 WS-NEXT-NEIGHBOR    USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 PROCEDURE DIVISION USING DSA-GRAPH.
+    SET WS-CURRENT TO DSA-GRAPH-VERTICES
+    PERFORM UNTIL WS-CURRENT = NULL
+        SET ADDRESS OF DSA-GRAPH-NODE TO WS-CURRENT
+        SET WS-NEXT-VERTEX TO DSA-GRAPH-NEXT
+        SET WS-NEIGHBOR TO DSA-GRAPH-NEIGHBORS
+        PERFORM UNTIL WS-NEIGHBOR = NULL
+            SET ADDRESS OF DSA-NEIGHBOR-NODE TO WS-NEIGHBOR
+            SET WS-NEXT-NEIGHBOR TO DSA-NEIGHBOR-NEXT
+            FREE WS-NEIGHBOR
+            SET WS-NEIGHBOR TO WS-NEXT-NEIGHBOR
+        END-PERFORM
+        FREE WS-CURRENT
+        SET WS-CURRENT TO WS-NEXT-VERTEX
+    END-PERFORM
+    SET ADDRESS OF DSA-GRAPH-NODE TO NULL
+    SET ADDRESS OF DSA-NEIGHBOR-NODE TO NULL
     INITIALIZE DSA-GRAPH
     GOBACK.
 END PROGRAM GRAPH-FREE.
@@ -316,11 +593,20 @@ END PROGRAM GRAPH-FREE.
 IDENTIFICATION DIVISION.
 PROGRAM-ID. FREE-NEIGHBORS.
 DATA DIVISION.
+WORKING-STORAGE SECTION.
+01 WS-NEXT             USAGE POINTER.
 LINKAGE SECTION.
 COPY "DATA-STRUCTURES-ADVANCED-PARAMS".
 01 LN-NEIGHBORS        USAGE POINTER.
 01 LN-COUNT            PIC S9(9) COMP-5.
 PROCEDURE DIVISION USING LN-NEIGHBORS LN-COUNT.
+    PERFORM UNTIL LN-NEIGHBORS = NULL
+        SET ADDRESS OF DSA-NEIGHBOR-NODE TO LN-NEIGHBORS
+        SET WS-NEXT TO DSA-NEIGHBOR-NEXT
+        FREE LN-NEIGHBORS
+        SET LN-NEIGHBORS TO WS-NEXT
+    END-PERFORM
+    SET ADDRESS OF DSA-NEIGHBOR-NODE TO NULL
     SET LN-NEIGHBORS TO NULL
     MOVE 0 TO LN-COUNT
     GOBACK.
