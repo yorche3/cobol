@@ -10,6 +10,7 @@ Implementación de la especificación [Algorithms Pure](../../../../docs/core/al
 |--------|--------|-------------|
 | [`naive_sort/`](naive_sort/) | ✅ | **Ordenamiento elemental**: `selection_sort`, `bubble_sort`, `insertion_sort` ($O(n^2)$) |
 | [`data_structures_basics/`](data_structures_basics/) | ✅ | **Estructuras enlazadas**: `Node`, `LinkedList`, `Stack`, `Queue` con memoria dinámica |
+| [`data_structures_advanced/`](data_structures_advanced/) | ✅ | **Estructuras avanzadas**: `TreeNode`, `BinaryTree`, `Graph` con memoria dinámica |
 
 ---
 
@@ -23,6 +24,10 @@ make clean && make
 ./run_tests
 
 cd cobol/core/algorithms/data_structures_basics
+make clean && make
+./run_tests
+
+cd cobol/core/algorithms/data_structures_advanced
 make clean && make
 ./run_tests
 ```
